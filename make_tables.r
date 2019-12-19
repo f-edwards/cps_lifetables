@@ -272,9 +272,8 @@ ggplot(tables %>%
   geom_linerange() +
   geom_point(size = 0.7) +
   theme_minimal() +
-  ylab("Risk of event by age 18") +
+  ylab("Probability of Foster Care by age 18") +
   xlab("Year") +
-  facet_wrap(~outcome) + 
   ggsave("./vis/fc_cumulative_yr.png")
 
 ggplot(tables %>%
@@ -288,7 +287,7 @@ ggplot(tables %>%
   geom_linerange() +
   geom_point(size = 0.7) +
   theme_minimal() +
-  ylab("Risk of event by age 18") +
+  ylab("Probability of confirmed maltreatment by age 18") +
   xlab("Year") +
   ggsave("./vis/malt_cumulative_yr.png")
 
