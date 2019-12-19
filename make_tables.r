@@ -263,7 +263,8 @@ tables<-tables_vis %>%
 
 ggplot(tables %>%
          filter(age==18,
-                year>=2004, year<=2016), aes(x = year, y = c ,
+                year>=2004, year<=2016,
+                outcome == "Foster Care Placement"), aes(x = year, y = c ,
                                  color = `Race/ethnicity`,
                                  ymin = c_lwr,
                                  ymax = c_upr)) +
@@ -275,4 +276,20 @@ ggplot(tables %>%
   xlab("Year") +
   facet_wrap(~outcome) + 
   ggsave("./vis/fc_cumulative_yr.png")
+
+ggplot(tables %>%
+         filter(age==18,
+                year>=2004, year<=2016,
+                outcome == "Confirmed Maltreatment"), aes(x = year, y = c ,
+                                                         color = `Race/ethnicity`,
+                                                         ymin = c_lwr,
+                                                         ymax = c_upr)) +
+  geom_line() +
+  geom_linerange() +
+  geom_point(size = 0.7) +
+  theme_minimal() +
+  ylab("Risk of event by age 18") +
+  xlab("Year") +
+  facet_wrap(~outcome) + 
+  ggsave("./vis/malt_cumulative_yr.png")
 
