@@ -290,6 +290,5 @@ ggplot(tables %>%
   theme_minimal() +
   ylab("Risk of event by age 18") +
   xlab("Year") +
-  facet_wrap(~outcome) + 
   ggsave("./vis/malt_cumulative_yr.png")
 
