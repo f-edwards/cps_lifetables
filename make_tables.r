@@ -263,7 +263,7 @@ tables<-tables_vis %>%
 
 ggplot(tables %>%
          filter(age==18,
-                year>=2004), aes(x = year, y = c ,
+                year>=2004, year<=2016), aes(x = year, y = c ,
                                  color = `Race/ethnicity`,
                                  ymin = c_lwr,
                                  ymax = c_upr)) +
