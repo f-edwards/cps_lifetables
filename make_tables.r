@@ -4,7 +4,8 @@ library(lubridate)
 
 source("lifetable.r")
 
-afcars<-read_csv("./data/afcars_imputed")
+afcars<-read_csv("./data/afcars_imputed",
+                 col_types = cols(stfcid = "c"))
 
 afcars<-afcars %>% 
   mutate(race_ethn = 
@@ -140,7 +141,8 @@ ncands_index<-ncands_temp %>%
   filter(rptvictim==1) %>% 
   select(st_id, rptdt) %>% 
   group_by(st_id) %>% 
-  summarise(rptdt = min(rptdt)) %>% 
+  slice(1) %>% 
+  ungroup() %>% 
   mutate(first_victim = TRUE)
 
 ncands_first_victim<-ncands  %>% 
@@ -149,6 +151,8 @@ ncands_first_victim<-ncands  %>%
   left_join(ncands_index) %>% 
   filter(!(is.na(first_victim))) %>% 
   mutate(year = year(rptdt)) %>% 
+  select(.imp, st_id, staterr, year, chage, race_ethn, rptdt) %>% 
+  distinct() %>% 
   group_by(.imp, staterr, year, chage, race_ethn) %>% 
   summarise(var = n())
 
@@ -272,7 +276,7 @@ ggplot(tables %>%
   geom_linerange() +
   geom_point(size = 0.7) +
   theme_minimal() +
-  ylab("Probability of Foster Care by age 18") +
+  ylab("Probability of foster care entry by age 18") +
   xlab("Year") +
   ggsave("./vis/fc_cumulative_yr.png")
 
