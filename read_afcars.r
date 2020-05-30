@@ -9,7 +9,12 @@ afcars_files<-paste(afcars_path,
                     list.files(afcars_path),
                     sep = "")
 
-afcars<-lapply(afcars_files, fread)
+afcars<-lapply(afcars_files, read_tsv)
+
+temp<-afcars[[10]] 
+temp<-temp %>% select(FY, StFCID, RecNumbr, St)
+testing<-temp %>% sample_n(100)
+parse_character(testing$StFCID ,locale = locale(encoding = "UTF-8"))
 
 for(i in 1:length(afcars_files)){
   afcars[[i]]<-afcars[[i]]%>%
@@ -28,6 +33,9 @@ for(i in 1:length(afcars_files)){
 }
 
 afcars<-bind_rows(afcars)
+
+### write out year of submission for alt
+
 
 
 afcars_id_xwalk<-afcars %>% 
@@ -87,22 +95,14 @@ pred[,12:15]<-0
 meth<-imps$method
 
 imps<-parlmice(afcars_imp, 
-           n.core = 3, 
+           n.core = 4, 
            n.imp.core = 2,
            predictorMatrix = pred,
            method = meth)
 
-imps_out<-complete(imps,
+imps_out<-mice::complete(imps,
                    action = "long",
-                   include = TRUE)
-# ### looks about right
-# ggplot(imps_out %>%
-#          group_by(.imp, race_ethn) %>%
-#          summarise(n = n()/nrow(afcars)),
-#        aes(x = n,
-#            y = race_ethn,
-#            col = .imp)) +
-#   geom_point()
+                   include = F)
 
 write.csv(imps_out, "./data/afcars_imputed_all_cases.csv",
           row.names=FALSE)

@@ -10,6 +10,8 @@ ncands_files<-paste(ncands_path,
                     sep = "")[1:16]
 
 ncands<-lapply(ncands_files, fread)
+temp<-ncands[[10]]
+ncands_id<-temp %>% select(subyr, AFCARSID, StaTerr)
 
 for(i in 1:length(ncands_files)){
   ncands[[i]]<-ncands[[i]]%>%

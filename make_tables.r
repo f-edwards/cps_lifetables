@@ -4,7 +4,7 @@ library(lubridate)
 
 source("lifetable.r")
 
-afcars<-read_csv("./data/afcars_imputed",
+afcars<-read_csv("./data/afcars_imputed_all_cases.csv",
                  col_types = cols(stfcid = "c"))
 
 afcars<-afcars %>% 
@@ -61,7 +61,7 @@ dat<-dat %>%
                         pop = sum(pop)) %>%
               mutate(race_ethn = "Total"))
 
-### run life tables by imp, race_ethnb, sex
+### run life tables by imp, race_ethn, sex
 race<-unique(dat$race_ethn)
 sex<-unique(dat$sex)
 years<-unique(dat$year)
@@ -278,7 +278,7 @@ ggplot(tables %>%
   theme_minimal() +
   ylab("Probability of foster care entry by age 18") +
   xlab("Year") +
-  ggsave("./vis/fc_cumulative_yr.png")
+  ggsave("./vis/fc_cumulative_yr_slides.png", width =5, height = 3)
 
 ggplot(tables %>%
          filter(age==18,
