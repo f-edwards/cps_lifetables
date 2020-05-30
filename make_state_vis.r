@@ -223,7 +223,7 @@ ggplot(ineq_plot_dat %>%
   theme(legend.position = "bottom") +
   scale_fill_distiller(palette = "Spectral") +
   facet_wrap(~race_ethn) +
-  ggsave("./vis/st_ineq_investigation.png")
+  ggsave("./vis/st_ineq_investigation.png", width = 6, height = 4.8)
 
 
 ggplot(plot_dat %>% 
