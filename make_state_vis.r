@@ -250,7 +250,7 @@ ggplot(ineq_plot_dat %>%
   theme(legend.position = "bottom") +
   scale_fill_distiller(palette = "Spectral") +
   facet_wrap(~race_ethn) +
-  ggsave("./vis/st_ineq_race_malt.png")
+  ggsave("./vis/st_ineq_race_malt.png", width = 6, height = 4.8)
 
 ggplot(plot_dat %>% 
          filter(varname=="Foster Care"),
@@ -276,7 +276,7 @@ ggplot(ineq_plot_dat %>%
   theme(legend.position = "bottom") +
   scale_fill_distiller(palette = "Spectral") +
   facet_wrap(~race_ethn) +
-  ggsave("./vis/st_ineq_race_fc.png")
+  ggsave("./vis/st_ineq_race_fc.png", width = 6, height = 4.8)
 
 ### Time series plots
 
