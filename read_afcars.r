@@ -11,11 +11,6 @@ afcars_files<-paste(afcars_path,
 
 afcars<-lapply(afcars_files, read_tsv)
 
-temp<-afcars[[10]] 
-temp<-temp %>% select(FY, StFCID, RecNumbr, St)
-testing<-temp %>% sample_n(100)
-parse_character(testing$StFCID ,locale = locale(encoding = "UTF-8"))
-
 for(i in 1:length(afcars_files)){
   afcars[[i]]<-afcars[[i]]%>%
     rename_all(tolower) %>%

@@ -7,6 +7,11 @@ source("lifetable.r")
 afcars<-read_csv("./data/afcars_imputed_all_cases.csv",
                  col_types = cols(stfcid = "c"))
 
+tpr_first<-afcars %>% 
+  filter(istpr==1) %>% 
+  group_by(.imp, state, stfcid) %>% 
+  slice(1)
+
 afcars<-afcars %>% 
   mutate(race_ethn = 
            ifelse(race_ethn == "AI/AN", 
