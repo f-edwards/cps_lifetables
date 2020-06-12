@@ -24,12 +24,27 @@ afcars_tpr<-afcars %>%
   left_join(afcars_xwalk %>% 
               select(fy, stfcid) %>% 
               distinct()) %>% 
-  group_by(stfcid) %>% 
-  filter(fy == min(fy)) %>% 
+  group_by(stfcid, .imp) %>% 
+  slice(1) %>% 
   ungroup() %>% 
   distinct() %>% 
   group_by(.imp, state, fy, age, race_ethn) %>% 
-  summarise(tpr = n())
+  summarise(tpr = n()) %>% 
+  ungroup()
+
+### complete the zeroes
+temp<-expand_grid(unique(afcars_tpr$.imp),
+                  unique(afcars_tpr$state),
+                  unique(afcars_tpr$fy),
+                  unique(afcars_tpr$age),
+                  unique(afcars_tpr$race_ethn)) 
+
+names(temp)<-c(".imp", "state", "fy", "age", "race_ethn")
+
+temp<-left_join(temp,
+                afcars_tpr) %>% 
+  mutate(tpr = ifelse(is.na(tpr), 0, tpr))
+
 
 write_csv(afcars_fy, "./data/state_first_fc.csv")
-write_csv(afcars_tpr, "./data/state_tpr.csv")
+write_csv(temp, "./data/state_tpr.csv")
