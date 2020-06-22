@@ -14,23 +14,23 @@ pop<-read_fwf("./data/us.1990_2017.singleages.adjusted.txt",
 
 first_fc<-read_csv("./data/state_first_fc.csv") %>% 
   rename(subyr = fy) %>% 
-  filter(subyr>=2008, state!=72) %>% 
+  filter(subyr>=2014, state!=72) %>% 
   tidyr::complete(.imp, state, subyr, age, 
            race_ethn, fill = list(first_entry = 0))
 
 tpr<-read_csv("./data/state_tpr.csv") %>% 
   rename(subyr = fy) %>% 
-  filter(subyr>=2008, state!=72) %>% 
+  filter(subyr>=2014, state!=72) %>% 
   tidyr::complete(.imp, state, subyr, age, 
                   race_ethn, fill = list(tpr = 0))
 
 ### finish complete zeroes
 first_inv<-read_csv("./data/state_first_inv.csv") %>% 
-  filter(subyr>=2008) %>% 
+  filter(subyr>=2014) %>% 
   tidyr::complete(.imp, staterr, subyr, age, 
                   race_ethn, fill = list(first_inv = 0))
 first_victim<-read_csv("./data/state_first_victim_out.csv") %>% 
-  filter(subyr>=2008) %>% 
+  filter(subyr>=2014) %>% 
   tidyr::complete(.imp, staterr, subyr, age, 
                   race_ethn, fill = list(first_victim = 0))
 
@@ -86,27 +86,6 @@ tab_dat<-dat %>%
   mutate(race_ethn="Total") %>% 
   ungroup() %>% 
   bind_rows(dat) 
-
-library(brms)
-library(lme4)
-
-mdat<-tab_dat %>% 
-  filter(.imp==1, varname == "first_entry", race_ethn == "Total") %>% 
-  mutate(year_c = year - 2008,
-         row_n = 1:n()) 
-
-m0<-brm(var ~ 
-          factor(age) + factor(staterr) * year_c + 
-          offset(log(pop)),
-        family = "negbinomial",
-        data = mdat)
-
-m0<-brm(var ~ staterr * factor(year) + factor(age) + 
-          offset(log(pop)) + 
-          (1|row_n),
-        data = mdat, 
-        family = "poisson")
-
 
 ### run life tables by imp, race_ethn, sex
 vars<-unique(tab_dat$varname)

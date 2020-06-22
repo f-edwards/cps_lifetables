@@ -29,15 +29,16 @@ for(i in 1:length(ncands_files)){
     select(chid, staterr,
            rptfips, rptdt,
            chage, race_ethn,
+           chprior,
            rptvictim, subyr)
   }
 
-ncands1<-bind_rows(ncands)
+ncands<-bind_rows(ncands)
 ncands<-ncands %>%
   mutate(year = year(rptdt))
 
 ncands_index<-ncands %>% 
-  select(chid, staterr, rptdt, subyr)
+  select(chid, staterr, rptdt, subyr, chprior, rptvictim)
 
 write.csv(ncands_index, "./data/ncands_subyr_xwalk.csv",
           row.names = F)
