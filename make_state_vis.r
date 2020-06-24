@@ -16,16 +16,6 @@ non_reports<-tables_comb %>%
   filter(c_mn==0) %>% 
   select(-race_ethn) 
 
-## ND 2008-2009, OR 2008 - 2011
-index<-which((tables_comb$staterr%in%c("ND") &
-               tables_comb$year<2010 &
-               tables_comb$varname %in% c("Investigation", "Confirmed Maltreatment"))|
-               tables_comb$staterr%in%c("OR") &
-               tables_comb$year<2012 &
-               tables_comb$varname %in% c("Investigation", "Confirmed Maltreatment"))
-
-tables_comb[index, 7:10]<-NA
-
 plot_dat<-tables_comb %>% 
   filter(year>=2014) %>% 
   group_by(state, staterr, varname, race_ethn) %>% 
@@ -109,7 +99,7 @@ ggplot(tables_comb %>%
   xlab("Risk of event by age 18") +
   theme_bw() +
   labs(y = "", fill = "", color = "") +
-  ggsave("./vis/st_race_density.png") 
+  ggsave("./vis/st_race_density.png", width = 6, height = 4) 
 
 state_dat<-state_dat  %>% 
   mutate(race_ethn = ifelse(race_ethn=="Hispanic",
