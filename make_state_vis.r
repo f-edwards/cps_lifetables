@@ -90,7 +90,7 @@ ggplot(tables_comb %>%
          filter(race_ethn!="Total"),
        aes(x = c_mn, fill = race_ethn, color = race_ethn)) + 
   geom_density(alpha = 0.2) + 
-  facet_wrap(~varname, scales = "free") + 
+  facet_wrap(~varname, scales = "free_y") + 
   theme_bw()+
   theme(axis.title.y=element_blank(),
         axis.text.y=element_blank(),
@@ -98,7 +98,7 @@ ggplot(tables_comb %>%
         legend.title = element_blank()) +
   xlab("Risk of event by age 18") +
   theme_bw() +
-  labs(y = "", fill = "", color = "") +
+  labs(y = "Density", fill = "", color = "") +
   theme(legend.position = "bottom") +
   ggsave("./vis/st_race_density.png", width = 6, height = 4) 
 
