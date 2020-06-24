@@ -28,12 +28,28 @@ tpr<-read_csv("./data/state_tpr.csv") %>%
 first_inv<-read_csv("./data/state_first_inv.csv") %>% 
   filter(subyr>=2014) %>% 
   tidyr::complete(.imp, staterr, subyr, age, 
-                  race_ethn, fill = list(first_inv = 0))
+                  race_ethn, fill = list(first_inv = 0)) %>% 
+  filter(!staterr%in%c("PA", "GA", "RI"))
+  
+
 first_victim<-read_csv("./data/state_first_victim_out.csv") %>% 
   filter(subyr>=2014) %>% 
   tidyr::complete(.imp, staterr, subyr, age, 
                   race_ethn, fill = list(first_victim = 0))
 
+# ### validation check for 2018 maltreatment report
+# victim_validation<-first_victim %>% 
+#   filter(.imp==1, subyr==2018) %>% 
+#   group_by(staterr) %>% 
+#   summarise(first_victim = sum(first_victim)) %>% 
+#   write_csv("./data/validation_victims_18.csv")
+# 
+# inv_validation<-first_inv %>% 
+#   filter(.imp==1, subyr==2018) %>% 
+#   group_by(staterr) %>% 
+#   summarise(first_inv = sum(first_inv)) %>% 
+#   write_csv("./data/validation_investiations_18.csv")
+  
 ### convert state abbrev to fips
 data(state.fips)
 st_fips<-state.fips %>% 
@@ -64,11 +80,10 @@ pop<-pop%>%
 
 ### get state pop
 pop_st <- pop %>% 
-  filter(age<=18, year>=2007) %>% 
+  filter(age<=18, year>=2014) %>% 
   group_by(state, year, staterr, age, race_ethn) %>% 
   summarise(pop = sum(pop)) %>% 
   ungroup() %>% 
-  mutate(year = year+1) %>% 
   mutate(state = as.numeric(state))
 
 
@@ -77,11 +92,14 @@ dat<-dat %>%
   left_join(pop_st) %>% 
   pivot_longer(cols = c(first_entry, first_inv, first_victim, tpr),
                names_to = "varname",
-               values_to = "var")
+               values_to = "var") %>% 
+  filter(year>=2014) %>% 
+  group_by(.imp, staterr, state, varname, age, race_ethn) %>% 
+  summarise(var = sum(var), pop = sum(pop))
 
 # make total
 tab_dat<-dat %>%
-  group_by(.imp, year, staterr, state, varname, age) %>% 
+  group_by(.imp, staterr, state, varname, age) %>% 
   summarise(var = sum(var), pop = sum(pop)) %>% 
   mutate(race_ethn="Total") %>% 
   ungroup() %>% 
@@ -91,7 +109,6 @@ tab_dat<-dat %>%
 vars<-unique(tab_dat$varname)
 race<-unique(tab_dat$race_ethn)
 state<-unique(tab_dat$state)
-years<-unique(tab_dat$year)
 tables_out<-list()
 
 counter<-0
@@ -99,14 +116,10 @@ for(h in 1:length(vars)){
   for(i in 1:8){
     for(r in 1:length(state)){
       for(y in 1:length(race)){
-        for(t in 1:length(years)){
           counter<-counter + 1
           
           temp<-tab_dat %>%
             filter(.imp == i)
-          
-          temp<-temp %>% 
-            filter(year==years[t])
           
           temp<-temp %>% 
             filter(varname == vars[h])
@@ -124,7 +137,6 @@ for(h in 1:length(vars)){
       }
     }
   }
-}
 
 tables<-bind_rows(tables_out)
 
@@ -133,19 +145,19 @@ tables<-bind_rows(tables_out)
 
 #### combine across imps
 tables_within<-tables %>%
-  group_by(race_ethn, state, staterr, age, year, varname) %>%
+  group_by(race_ethn, state, staterr, age, varname) %>%
   summarise(c_mn = mean(c),
             v_within = mean(se)) 
 
 tables_between<-tables %>%
   left_join(tables_within) %>%
-  group_by(race_ethn, state, staterr, age, year, varname) %>%
+  group_by(race_ethn, state, staterr, age, varname) %>%
   summarise(v_between = 1/7 * sum(c - c_mn)^2)
 
 tables_comb<-tables_within %>%
   left_join(tables_between) %>%
   mutate(se_tot = sqrt(v_within + (1 + 1/8)*v_between)) %>%
-  select(state, staterr, varname, year, race_ethn, age, c_mn, se_tot)
+  select(state, staterr, varname, race_ethn, age, c_mn, se_tot)
 
 tables_comb<-tables_comb %>%
   mutate(c_upr = c_mn + 1.96 * se_tot,
@@ -162,4 +174,4 @@ tables_comb<-tables_comb %>%
     T ~ varname
   )) 
 
-write_csv(tables_comb, "./vis/st_tables.csv")
+write_csv(tables_comb, "./vis/st_tables_combine.csv")
