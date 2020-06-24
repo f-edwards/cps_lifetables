@@ -99,6 +99,7 @@ ggplot(tables_comb %>%
   xlab("Risk of event by age 18") +
   theme_bw() +
   labs(y = "", fill = "", color = "") +
+  theme(legend.position = "bottom") +
   ggsave("./vis/st_race_density.png", width = 6, height = 4) 
 
 state_dat<-state_dat  %>% 
