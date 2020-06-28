@@ -100,7 +100,7 @@ ggplot(tables_comb %>%
   theme_bw() +
   labs(y = "Density", fill = "", color = "") +
   theme(legend.position = "bottom") +
-  ggsave("./vis/st_race_density.png", width = 6, height = 4) 
+  ggsave("./vis/st_race_density.png", width = 7, height = 4) 
 
 state_dat<-state_dat  %>% 
   mutate(race_ethn = ifelse(race_ethn=="Hispanic",
@@ -177,7 +177,7 @@ ggplot(malt_inv,
   guides(fill = guide_colourbar(title.position="top", title.hjust = 0.5)) +  theme(legend.position = "bottom") +
   scale_fill_distiller(palette = "Spectral") +
   facet_wrap(~race_ethn) +
-  ggsave("./vis/st_malt_inv.png")
+  ggsave("./vis/st_malt_inv.png", width = 7, height = 4)
 
 ggplot(fc_malt %>% 
          mutate(fc_malt = ifelse(fc_malt>1, 1, fc_malt)),
@@ -189,7 +189,7 @@ ggplot(fc_malt %>%
   guides(fill = guide_colourbar(title.position="top", title.hjust = 0.5)) +  theme(legend.position = "bottom") +
   scale_fill_distiller(palette = "Spectral") +
   facet_wrap(~race_ethn) +
-  ggsave("./vis/st_fc_malt.png")
+  ggsave("./vis/st_fc_malt.png", width = 7, height = 4)
 
 ggplot(plot_dat %>% 
          filter(varname=="Investigation"),
@@ -201,7 +201,7 @@ ggplot(plot_dat %>%
   guides(fill = guide_colourbar(title.position="top", title.hjust = 0.5)) +  theme(legend.position = "bottom") +
   scale_fill_distiller(palette = "Spectral") +
   facet_wrap(~race_ethn) +
-  ggsave("./vis/st_race_investigation.png")
+  ggsave("./vis/st_race_investigation.png", width = 7, height = 4)
 
 ggplot(ineq_plot_dat %>% 
          filter(varname=="Investigation"),
@@ -214,7 +214,7 @@ ggplot(ineq_plot_dat %>%
   theme(legend.position = "bottom") +
   scale_fill_distiller(palette = "Spectral") +
   facet_wrap(~race_ethn) +
-  ggsave("./vis/st_ineq_investigation.png", width = 6, height = 4.8)
+  ggsave("./vis/st_ineq_investigation.png", width = 5, height = 4)
 
 
 ggplot(plot_dat %>% 
@@ -228,7 +228,7 @@ ggplot(plot_dat %>%
   theme(legend.position = "bottom") +
   scale_fill_distiller(palette = "Spectral") +
   facet_wrap(~race_ethn) +
-  ggsave("./vis/st_race_malt.png")
+  ggsave("./vis/st_race_malt.png", width = 7, height = 4)
 
 ggplot(ineq_plot_dat %>% 
          filter(varname=="Confirmed Maltreatment"),
@@ -241,7 +241,7 @@ ggplot(ineq_plot_dat %>%
   theme(legend.position = "bottom") +
   scale_fill_distiller(palette = "Spectral") +
   facet_wrap(~race_ethn) +
-  ggsave("./vis/st_ineq_race_malt.png", width = 6, height = 4.8)
+  ggsave("./vis/st_ineq_race_malt.png", width = 5, height = 4)
 
 ggplot(plot_dat %>% 
          filter(varname=="Foster Care"),
@@ -254,7 +254,7 @@ ggplot(plot_dat %>%
   theme(legend.position = "bottom") +
   scale_fill_distiller(palette = "Spectral") +
   facet_wrap(~race_ethn) +
-  ggsave("./vis/st_race_fc.png")
+  ggsave("./vis/st_race_fc.png", width = 7, height = 4)
 
 ggplot(ineq_plot_dat %>% 
          filter(varname=="Foster Care"),
@@ -267,41 +267,43 @@ ggplot(ineq_plot_dat %>%
   theme(legend.position = "bottom") +
   scale_fill_distiller(palette = "Spectral") +
   facet_wrap(~race_ethn) +
-  ggsave("./vis/st_ineq_race_fc.png", width = 6, height = 4.8)
+  ggsave("./vis/st_ineq_race_fc.png", width = 5, height = 4)
 
 ### Time series plots
 
 ggplot(tables_comb %>% 
          filter(race_ethn=="Total", varname == "Investigation"), 
-       aes(x = year, y = c_mn,
+       aes(x = year - 2000, y = c_mn,
            ymin = c_lwr, ymax = c_upr)) + 
   geom_line() + 
   geom_ribbon(alpha = 0.4) +
-  theme_bw() + 
+  theme_minimal() + 
   facet_wrap(~staterr) + 
   labs(x = "Year", y = "Lifetime risk") + 
-  scale_x_continuous(breaks = c(2010, 2016)) + 
-  ggsave("./vis/st_time_inv.png")
+  ggsave("./vis/st_time_inv.png", width = 7, height = 7)
 
 ggplot(tables_comb %>% 
          filter(race_ethn=="Total", varname == "Confirmed Maltreatment"), 
-       aes(x = year, y = c_mn)) + 
+       aes(x = year - 2000, y = c_mn,
+           ymin = c_lwr, ymax = c_upr)) + 
   geom_line() + 
-  theme_bw() + 
+  geom_ribbon(alpha = 0.4) +
+  theme_minimal() + 
   facet_wrap(~staterr) + 
   labs(x = "Year", y = "Lifetime risk") + 
-  scale_x_continuous(breaks = c(2010, 2016)) + 
-  ggsave("./vis/st_time_malt.png")
+  ggsave("./vis/st_time_malt.png", width = 7, height = 7)
 
 ggplot(tables_comb %>% 
          filter(race_ethn=="Total", varname == "Foster Care"), 
-       aes(x = year, y = c_mn)) + 
+       aes(x = year - 2000, y = c_mn,
+           ymin = c_lwr, ymax = c_upr)) + 
   geom_line() + 
-  theme_bw() + 
+  geom_ribbon(alpha = 0.4) +
+  theme_minimal() + 
   facet_wrap(~staterr) + 
   labs(x = "Year", y = "Lifetime risk") + 
   scale_x_continuous(breaks = c(2010, 2016)) + 
-  ggsave("./vis/st_time_fc.png")
+  ggsave("./vis/st_time_fc.png", width = 7, height = 7)
 
 ### proportional change since 08
 plot_08<-tables_comb %>% 
@@ -338,4 +340,4 @@ ggplot(change,
   geom_hline(yintercept = 1, lty = 2) + 
   facet_wrap(~varname, ncol = 3) + 
   labs(x = "", y = "Proportional change") +
-  ggsave("./vis/case_change.png")
+  ggsave("./vis/case_change.png", width = 7, height = 7)
