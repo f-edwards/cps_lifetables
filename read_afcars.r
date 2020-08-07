@@ -11,6 +11,10 @@ afcars_files<-paste(afcars_path,
 
 afcars<-lapply(afcars_files, read_tsv)
 
+afcars<-afcars%>%
+  rename_all(tolower) %>%
+  mutate(stfcid = paste(state, recnumbr, sep = ""))
+
 for(i in 1:length(afcars_files)){
   afcars[[i]]<-afcars[[i]]%>%
     rename_all(tolower) %>%
