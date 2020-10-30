@@ -7,7 +7,16 @@ tables_comb<-read_csv("./vis/st_tables.csv") %>%
   mutate(varname = factor(varname, 
                           levels = c("Investigation",
                                      "Confirmed Maltreatment",
-                                     "Foster Care"))) 
+                                     "Foster Care"))) %>% 
+  mutate(c_mn = ifelse(
+    staterr == "WV" & varname %in% c("Investigation", "Confirmed Maltreatment"),
+    NA,
+    c_mn),
+    c_upr = ifelse(
+      staterr == "WV" & varname %in% c("Investigation", "Confirmed Maltreatment"),
+      NA,
+      c_upr)
+  )
 
 ## remove states with non-reporting, OR, ND
 non_reports<-tables_comb %>% 
@@ -19,9 +28,11 @@ non_reports<-tables_comb %>%
 plot_dat<-tables_comb %>% 
   filter(year>=2014) %>% 
   group_by(state, staterr, varname, race_ethn) %>% 
-  summarise(c_mn = mean(c_mn))
+  summarise(c_mn = mean(c_mn)) %>% 
+  filter(staterr!="DC")
 
 ### make risk ratio for event sequencing
+### remove wv - numbers don't seem trustworthy
 inv_dat<-plot_dat %>% 
   ungroup() %>% 
   filter(varname=="Investigation") %>% 
@@ -31,7 +42,7 @@ inv_dat<-plot_dat %>%
 malt_dat<-plot_dat %>% 
   ungroup() %>% 
   filter(varname=="Confirmed Maltreatment") %>% 
-  rename(malt = c_mn)%>% 
+  rename(malt = c_mn) %>% 
   select(-varname)
 
 fc_dat<-plot_dat %>% 
@@ -174,9 +185,11 @@ ggplot(malt_inv,
   geom_polygon(color = "black") + 
   theme_void() +
   labs(fill = "Confirmed Maltreatment / Investigation") +
-  guides(fill = guide_colourbar(title.position="top", title.hjust = 0.5)) +  theme(legend.position = "bottom") +
+  guides(fill = guide_colourbar(title.position="top", title.hjust = 0.5)) +  
+  theme(legend.position = "bottom") +
   scale_fill_distiller(palette = "Spectral") +
   facet_wrap(~race_ethn) +
+  coord_fixed() +
   ggsave("./vis/st_malt_inv.png", width = 7, height = 4)
 
 ggplot(fc_malt %>% 
@@ -186,9 +199,11 @@ ggplot(fc_malt %>%
   geom_polygon(color = "black") + 
   theme_void() +
   labs(fill = "Foster Care / Confirmed Maltreatment") +
-  guides(fill = guide_colourbar(title.position="top", title.hjust = 0.5)) +  theme(legend.position = "bottom") +
+  guides(fill = guide_colourbar(title.position="top", title.hjust = 0.5)) +  
+  theme(legend.position = "bottom") +
   scale_fill_distiller(palette = "Spectral") +
   facet_wrap(~race_ethn) +
+  coord_fixed() +
   ggsave("./vis/st_fc_malt.png", width = 7, height = 4)
 
 ggplot(plot_dat %>% 
@@ -201,6 +216,7 @@ ggplot(plot_dat %>%
   guides(fill = guide_colourbar(title.position="top", title.hjust = 0.5)) +  theme(legend.position = "bottom") +
   scale_fill_distiller(palette = "Spectral") +
   facet_wrap(~race_ethn) +
+  coord_fixed() +
   ggsave("./vis/st_race_investigation.png", width = 7, height = 4)
 
 ggplot(ineq_plot_dat %>% 
@@ -214,6 +230,7 @@ ggplot(ineq_plot_dat %>%
   theme(legend.position = "bottom") +
   scale_fill_distiller(palette = "Spectral") +
   facet_wrap(~race_ethn) +
+  coord_fixed() +
   ggsave("./vis/st_ineq_investigation.png", width = 5, height = 4)
 
 
@@ -228,6 +245,7 @@ ggplot(plot_dat %>%
   theme(legend.position = "bottom") +
   scale_fill_distiller(palette = "Spectral") +
   facet_wrap(~race_ethn) +
+  coord_fixed() +
   ggsave("./vis/st_race_malt.png", width = 7, height = 4)
 
 ggplot(ineq_plot_dat %>% 
@@ -241,6 +259,7 @@ ggplot(ineq_plot_dat %>%
   theme(legend.position = "bottom") +
   scale_fill_distiller(palette = "Spectral") +
   facet_wrap(~race_ethn) +
+  coord_fixed() +
   ggsave("./vis/st_ineq_race_malt.png", width = 5, height = 4)
 
 ggplot(plot_dat %>% 
@@ -254,6 +273,7 @@ ggplot(plot_dat %>%
   theme(legend.position = "bottom") +
   scale_fill_distiller(palette = "Spectral") +
   facet_wrap(~race_ethn) +
+  coord_fixed() +
   ggsave("./vis/st_race_fc.png", width = 7, height = 4)
 
 ggplot(ineq_plot_dat %>% 
@@ -267,6 +287,7 @@ ggplot(ineq_plot_dat %>%
   theme(legend.position = "bottom") +
   scale_fill_distiller(palette = "Spectral") +
   facet_wrap(~race_ethn) +
+  coord_fixed() +
   ggsave("./vis/st_ineq_race_fc.png", width = 5, height = 4)
 
 ### Time series plots

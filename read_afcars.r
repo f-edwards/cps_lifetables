@@ -9,7 +9,11 @@ afcars_files<-paste(afcars_path,
                     list.files(afcars_path),
                     sep = "")
 
+### mod for quality check on DC
+afcars_files<-afcars_files[13:19]
+
 afcars<-lapply(afcars_files, read_tsv)
+
 
 for(i in 1:length(afcars_files)){
   afcars[[i]]<-afcars[[i]]%>%
@@ -29,6 +33,10 @@ for(i in 1:length(afcars_files)){
 
 afcars<-bind_rows(afcars)
 
+### check DC quality
+dc<-afcars %>% 
+  filter(st == "DC") %>% 
+  mutate(race_ethn = ifelse(is.na(race_ethn), "Missing", race_ethn))
 ### write out year of submission for alt
 
 
