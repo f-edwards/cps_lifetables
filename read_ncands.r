@@ -7,7 +7,7 @@ library(mice)
 ncands_path<-"~/Projects/ndacan_data/ncands/"
 ncands_files<-paste(ncands_path,
                     list.files(ncands_path),
-                    sep = "")[1:16]
+                    sep = "")[1:17]
 
 ncands<-lapply(ncands_files, fread)
 temp<-ncands[[10]]
@@ -44,16 +44,15 @@ data(state.fips)
 state.fips<-state.fips %>% 
   select(fips, abb) %>% 
   distinct() %>% 
-  rename(staterr = abb)
+  rename(staterr = abb) %>% 
+  bind_rows(data.frame(fips = c(2, 15), staterr = c("AK", "HI")))
 
 ncands_xwalk<-ncands_xwalk %>% 
   left_join(state.fips) %>% 
-  filter(afcarsid!="",
-         staterr!="XX") %>% 
   mutate(stfcid = paste(fips, afcarsid, sep="")) 
 
 ncands_xwalk<-ncands_xwalk %>% 
-  select(chid, stfcid, rptdt, subyr)
+  select(chid, stfcid, rptdt, subyr, staterr)
 
 write_csv(ncands_xwalk, 
           "~/Projects/ai_an_transitions/data/ncands_xwalk.csv")
@@ -91,4 +90,4 @@ write_csv(ncands_xwalk,
 # write.csv(imps_out, "./data/ncands_imputed.csv",
 #           row.names=FALSE)
 
-q("no")
+#q("no")
