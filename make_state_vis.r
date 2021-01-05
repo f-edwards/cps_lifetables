@@ -114,68 +114,77 @@ ggplot(tables_comb %>%
   ggsave("./vis/st_race_density.png", width = 7, height = 4) 
 
 state_dat<-state_dat  %>% 
-  mutate(race_ethn = ifelse(race_ethn=="Hispanic",
-                            "Latinx",
-                            race_ethn)) %>% 
+  mutate(race_ethn = ifelse(race_ethn == "AI/AN",
+                            "American Indian/Alaska Native",
+                            ifelse(race_ethn == "Asian/PI",
+                                   "Asian/Pacific Islander",
+                            race_ethn))) %>% 
   mutate(race_ethn = factor(race_ethn,
                             levels = c(
                               "Total", 
-                              "AI/AN",
-                              "Asian/PI",
+                              "American Indian/Alaska Native",
+                              "Asian/Pacific Islander",
                               "Black",
-                              "Latinx",
+                              "Hispanic",
                               "White")))
 
 plot_dat<-plot_dat  %>% 
-  mutate(race_ethn = ifelse(race_ethn=="Hispanic",
-                            "Latinx",
-                            race_ethn)) %>% 
+  mutate(race_ethn = ifelse(race_ethn == "AI/AN",
+                            "American Indian/Alaska Native",
+                            ifelse(race_ethn == "Asian/PI",
+                                   "Asian/Pacific Islander",
+                            race_ethn))) %>% 
   mutate(race_ethn = factor(race_ethn,
                             levels = c(
                               "Total", 
-                              "AI/AN",
-                              "Asian/PI",
+                              "American Indian/Alaska Native",
+                              "Asian/Pacific Islander",
                               "Black",
-                              "Latinx",
+                              "Hispanic",
                               "White")))
-
 ineq_plot_dat<-ineq_plot_dat  %>% 
-  mutate(race_ethn = ifelse(race_ethn=="Hispanic",
-                            "Latinx",
-                            race_ethn)) %>% 
+  mutate(race_ethn = ifelse(race_ethn == "AI/AN",
+                            "American Indian/Alaska Native",
+                            ifelse(race_ethn == "Asian/PI",
+                                   "Asian/Pacific Islander",
+                            race_ethn))) %>% 
   mutate(race_ethn = factor(race_ethn,
                             levels = c(
                               "Total", 
-                              "AI/AN",
-                              "Asian/PI",
+                              "American Indian/Alaska Native",
+                              "Asian/Pacific Islander",
                               "Black",
-                              "Latinx",
+                              "Hispanic",
                               "White")))
 
 malt_inv<-malt_inv  %>% 
-  mutate(race_ethn = ifelse(race_ethn=="Hispanic",
-                            "Latinx",
-                            race_ethn)) %>% 
+  mutate(race_ethn = ifelse(race_ethn == "AI/AN",
+                            "American Indian/Alaska Native",
+                            ifelse(race_ethn == "Asian/PI",
+                                   "Asian/Pacific Islander",
+                            race_ethn))) %>% 
   mutate(race_ethn = factor(race_ethn,
                             levels = c(
                               "Total", 
-                              "AI/AN",
-                              "Asian/PI",
+                              "American Indian/Alaska Native",
+                              "Asian/Pacific Islander",
                               "Black",
-                              "Latinx",
+                              "Hispanic",
                               "White")))
 
 fc_malt<-fc_malt  %>% 
-  mutate(race_ethn = ifelse(race_ethn=="Hispanic",
-                            "Latinx",
-                            race_ethn)) %>% 
+  mutate(race_ethn = ifelse(race_ethn == "AI/AN",
+                            "American Indian/Alaska Native",
+                            ifelse(race_ethn == "Asian/PI",
+                                   "Asian/Pacific Islander",
+                            race_ethn))) %>% 
   mutate(race_ethn = factor(race_ethn,
                             levels = c(
                               "Total", 
-                              "AI/AN",
-                              "Asian/PI",
+                              "American Indian/Alaska Native",
+                              "Asian/Pacific Islander",
                               "Black",
-                              "Latinx",
+                              "Hispanic",
                               "White")))
 
 
@@ -231,7 +240,7 @@ ggplot(ineq_plot_dat %>%
   scale_fill_distiller(palette = "Spectral") +
   facet_wrap(~race_ethn) +
   coord_fixed() +
-  ggsave("./vis/st_ineq_investigation.png", width = 5, height = 4)
+  ggsave("./vis/st_ineq_investigation.png", width =7, height = 4)
 
 
 ggplot(plot_dat %>% 
@@ -260,7 +269,7 @@ ggplot(ineq_plot_dat %>%
   scale_fill_distiller(palette = "Spectral") +
   facet_wrap(~race_ethn) +
   coord_fixed() +
-  ggsave("./vis/st_ineq_race_malt.png", width = 5, height = 4)
+  ggsave("./vis/st_ineq_race_malt.png", width = 7, height = 4)
 
 ggplot(plot_dat %>% 
          filter(varname=="Foster Care"),
@@ -288,7 +297,7 @@ ggplot(ineq_plot_dat %>%
   scale_fill_distiller(palette = "Spectral") +
   facet_wrap(~race_ethn) +
   coord_fixed() +
-  ggsave("./vis/st_ineq_race_fc.png", width = 5, height = 4)
+  ggsave("./vis/st_ineq_race_fc.png", width =7, height = 4)
 
 ### Time series plots
 
