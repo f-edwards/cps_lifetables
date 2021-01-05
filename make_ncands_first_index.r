@@ -25,6 +25,8 @@ ncands_out<-bind_rows(ncands_out)
 
 ### recode NA on chprior to 9 so it evals correctly below
 
+### NEED NUMERIC STFCID TO MATCH ONTO AFCARS
+
 ncands_index<-read_csv("./data/ncands_subyr_xwalk.csv") %>% 
   mutate(st_id = paste(staterr, chid, sep="")) %>% 
   select(-chid) %>% 
