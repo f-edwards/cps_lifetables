@@ -14,13 +14,6 @@ afcars_files<-afcars_files[13:19]
 
 afcars<-lapply(afcars_files, read_tsv)
 
-<<<<<<< HEAD
-afcars<-afcars%>%
-  rename_all(tolower) %>%
-  mutate(stfcid = paste(state, recnumbr, sep = ""))
-=======
->>>>>>> f7567e4800c498c7b20fce4f102c01f6f6622e68
-
 for(i in 1:length(afcars_files)){
   afcars[[i]]<-afcars[[i]]%>%
     rename_all(tolower) %>%

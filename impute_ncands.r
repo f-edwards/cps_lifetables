@@ -9,7 +9,7 @@ ncands_files<-paste(ncands_path,
                     list.files(ncands_path),
                     sep = "")
 ### set up for 17, 18 imputation
-ncands_files<-paste(ncands_path, list.files(ncands_path), sep = "")[1:17]
+ncands_files<-paste(ncands_path, list.files(ncands_path), sep = "")[1:18]
 
 ncands<-lapply(ncands_files, fread)
 ### set up to grab rptyear variable, bind to rptdt//chid for index join
