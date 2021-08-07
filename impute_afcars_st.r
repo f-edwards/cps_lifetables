@@ -1,3 +1,5 @@
+#### 
+
 rm(list=ls())
 library(data.table)
 library(tidyverse)
@@ -32,7 +34,7 @@ for(i in 1:length(afcars_files)){
 
 afcars<-bind_rows(afcars)
 
-pop<-read_fwf("./data/us.1990_2017.singleages.adjusted.txt",
+pop<-read_fwf("~Projects/data/us.1990_2018.singleages.adjusted.txt",
               fwf_widths(c(4, 2, 2, 3, 2, 1, 1, 1, 2, 8),
                          c("year", "state", "st_fips",
                            "cnty_fips", "reg", "race",
@@ -129,18 +131,10 @@ save(imps, file="./data/afcars_imp_17_18.Rdata")
 imps_out<-complete(imps,
                    action = "long",
                    include = TRUE)
-# ### looks about right
-# ggplot(imps_out %>%
-#          group_by(.imp, race_ethn) %>%
-#          summarise(n = n()/nrow(afcars)),
-#        aes(x = n,
-#            y = race_ethn,
-#            col = .imp)) +
-#   geom_point()
 
 write.csv(imps_out, "./data/afcars_imputed_all_cases_with_pop_17_18.csv",
           row.names=FALSE)
 
-#q(save="no")
+q(save="yes")
 
 

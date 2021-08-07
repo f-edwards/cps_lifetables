@@ -51,7 +51,7 @@ ncands <- ncands %>%
                       NA,
                       age))
 
-pop<-read_fwf("./data/us.1990_2017.singleages.adjusted.txt",
+pop<-read_fwf("~/Projects/data/us.1990_2018.singleages.adjusted.txt",
               fwf_widths(c(4, 2, 2, 3, 2, 1, 1, 1, 2, 8),
                          c("year", "state", "st_fips",
                            "cnty_fips", "reg", "race",
@@ -120,21 +120,16 @@ rm(ncands); rm(pop); gc()
 
 years<-unique(ncands_pop$year)
 
-for(i in 17:18){
+for(i in 1:length(years)){
   imp_dat<-ncands_pop %>% 
     filter(year == years[i])
   imps<-parlmice(imp_dat, 
-                 n.imp.core=4,
+                 n.imp.core=5,
                  predictorMatrix = pred,
                  method = meth,
                  n.core = 2)
-  filename<-paste("ncands_imps", i, ".RData", sep="")
-  save(imps, file = filename)
+  filename<-paste("./imputations/ncands_imps", i, ".rds", sep="")
+  saveRDS(imps, file = filename)
 }
 
-
-# 
-# write.csv(imps_out, "./data/ncands_imputed_with_pop.csv",
-#           row.names=FALSE)
-
-# q(save="no")
+q(save="yes")
