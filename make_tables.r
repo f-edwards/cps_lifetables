@@ -1,302 +1,181 @@
+### make 2014 - 2018 pooled life tables from NCANDS / AFCARS
+### corrected for NCANDS pre-2014 cases de-duplication
+### using processed data from ndacan_processing
+
 rm(list=ls()); gc()
 library(tidyverse)
 library(lubridate)
+library(maps)
+state_map<-map_data("state")
 
 source("lifetable.r")
 
-afcars<-read_csv("./data/afcars_imputed_all_cases.csv",
-                 col_types = cols(stfcid = "c"))
-
-tpr_first<-afcars %>% 
-  filter(istpr==1) %>% 
-  group_by(.imp, state, stfcid) %>% 
-  slice(1)
-
-afcars<-afcars %>% 
-  mutate(race_ethn = 
-           ifelse(race_ethn == "AI/AN", 
-                  "American Indian / Alaska Native",
-                  race_ethn),
-         race_ethn = 
-           ifelse(race_ethn == "Asian/PI",
-                  "Asian / Pacific Islander",
-                  race_ethn))
-
-pop<-read_fwf("./data/us.1990_2017.singleages.adjusted.txt",
+pop<-read_fwf("./data/us.1990_2018.singleages.adjusted.txt",
               fwf_widths(c(4, 2, 2, 3, 2, 1, 1, 1, 2, 8),
-                         c("year", "state", "st_fips",
+                         c("year", "staterr", "state",
                            "cnty_fips", "reg", "race",
                            "hisp", "sex", "age", "pop")))
+
+first_fc<-read_csv("./data/state_first_fc.csv") %>% 
+  rename(subyr = fy) %>% 
+  filter(subyr>=2014, state!=72) %>% 
+  tidyr::complete(.imp, state, subyr, age, 
+           race_ethn, fill = list(first_entry = 0))
+
+tpr<-read_csv("./data/state_tpr.csv") %>% 
+  rename(subyr = fy) %>% 
+  filter(subyr>=2014, state!=72) %>% 
+  tidyr::complete(.imp, state, subyr, age, 
+                  race_ethn, fill = list(tpr = 0))
+
+### finish complete zeroes
+first_inv<-read_csv("./data/state_first_inv.csv") %>% 
+  filter(subyr>=2014) %>% 
+  tidyr::complete(.imp, staterr, subyr, age, 
+                  race_ethn, fill = list(first_inv = 0)) %>% 
+  filter(!staterr%in%c("PA", "GA", "RI"))
+  
+
+first_victim<-read_csv("./data/state_first_victim_out.csv") %>% 
+  filter(subyr>=2014) %>% 
+  tidyr::complete(.imp, staterr, subyr, age, 
+                  race_ethn, fill = list(first_victim = 0))
+
+# ### validation check for 2018 maltreatment report
+# victim_validation<-first_victim %>% 
+#   filter(.imp==1, subyr==2018) %>% 
+#   group_by(staterr) %>% 
+#   summarise(first_victim = sum(first_victim)) %>% 
+#   write_csv("./data/validation_victims_18.csv")
+# 
+# inv_validation<-first_inv %>% 
+#   filter(.imp==1, subyr==2018) %>% 
+#   group_by(staterr) %>% 
+#   summarise(first_inv = sum(first_inv)) %>% 
+#   write_csv("./data/validation_investiations_18.csv")
+  
+### convert state abbrev to fips
+data(state.fips)
+st_fips<-state.fips %>% 
+  select(fips, abb) %>% 
+  rename(staterr = abb, state = fips) %>% 
+  distinct() %>% 
+  bind_rows(data.frame("staterr" = c("AK", "HI"), "state" = c(2, 15)))
+
+dat<-first_fc %>% 
+  left_join(tpr) %>% 
+  left_join(st_fips) %>% 
+  left_join(first_inv %>% 
+              left_join(st_fips)) %>% 
+  left_join(first_victim %>% 
+              left_join(st_fips)) %>% 
+  rename(year = subyr)
+
 pop<-pop%>%
   mutate(pop = as.integer(pop))%>%
   mutate(race_ethn =
            case_when(
              race==1 & hisp ==0 ~ "White",
              race==2 ~ "Black",
-             race==3 ~ "American Indian / Alaska Native",
-             race==4 ~ "Asian / Pacific Islander",
+             race==3 ~ "AI/AN", 
+             race==4 ~ "Asian/PI",
              hisp==1 ~ "Hispanic")) %>%
-  mutate(age = as.integer(age)) %>%
-  filter(year>=2000)
+  mutate(age = as.integer(age))
 
-pop_nat <- pop %>%
-  group_by(year, age,  race_ethn) %>%
-  summarise(pop = sum(pop))
+### get state pop
+pop_st <- pop %>% 
+  filter(age<=18, year>=2014) %>% 
+  group_by(state, year, staterr, age, race_ethn) %>% 
+  summarise(pop = sum(pop)) %>% 
+  ungroup() %>% 
+  mutate(state = as.numeric(state))
 
-afcars_nat_year<-afcars %>%
-  filter(.imp!=0) %>%
-  group_by(.imp, year, age, race_ethn) %>%
-  summarise(first_fc = n()) %>%
-  ungroup() %>%
-  complete(.imp, year, age, race_ethn,
-           fill = list(first_fc=0)) %>%
-  left_join(pop_nat)
 
-afcars_nat_year<-afcars_nat_year %>%
-  ungroup()
+### join to dat
+dat<-dat %>% 
+  left_join(pop_st) %>% 
+  pivot_longer(cols = c(first_entry, first_inv, first_victim, tpr),
+               names_to = "varname",
+               values_to = "var") %>% 
+  filter(year>=2014) %>% 
+  group_by(.imp, staterr, state, varname, age, race_ethn) %>% 
+  summarise(var = sum(var), pop = sum(pop))
 
-### format afcars for lifetable
-dat<-afcars_nat_year%>%
-  rename(var = first_fc)
-# add total to table
-dat<-dat %>%
-  bind_rows(afcars_nat_year %>%
-              group_by(.imp,year, age) %>%
-              summarise(var= sum(first_fc),
-                        pop = sum(pop)) %>%
-              mutate(race_ethn = "Total"))
+# make total
+tab_dat<-dat %>%
+  group_by(.imp, staterr, state, varname, age) %>% 
+  summarise(var = sum(var), pop = sum(pop)) %>% 
+  mutate(race_ethn="Total") %>% 
+  ungroup() %>% 
+  bind_rows(dat) 
 
 ### run life tables by imp, race_ethn, sex
-race<-unique(dat$race_ethn)
-sex<-unique(dat$sex)
-years<-unique(dat$year)
+vars<-unique(tab_dat$varname)
+race<-unique(tab_dat$race_ethn)
+state<-unique(tab_dat$state)
 tables_out<-list()
 
 counter<-0
-for(i in 1:5){
-  for(r in 1:length(race)){
-    for(y in 1:length(years)){
-      counter<-counter + 1
-
-      temp<-dat %>%
-        filter(.imp == i,
-               race_ethn == race[r],
-               year == years[y])
-
-      tables_out[[counter]]<-make_life_table(temp)
+for(h in 1:length(vars)){
+  for(i in 1:8){
+    for(r in 1:length(state)){
+      for(y in 1:length(race)){
+          counter<-counter + 1
+          
+          temp<-tab_dat %>%
+            filter(.imp == i)
+          
+          temp<-temp %>% 
+            filter(varname == vars[h])
+          
+          temp<-temp %>% 
+            filter(race_ethn == race[y])
+          
+          state_temp<-state[r]
+          
+          temp<-temp %>% 
+            filter(state == state_temp)
+          
+          tables_out[[counter]]<-make_life_table(temp)
+        }
+      }
     }
   }
-}
 
 tables<-bind_rows(tables_out)
+
+
+#### FIX SE SO THAT IT's JUST IMPUTATION VARIANCE ESTIMATED
 
 #### combine across imps
 tables_within<-tables %>%
-  group_by(year, age, race_ethn) %>%
+  group_by(race_ethn, state, staterr, age, varname) %>%
   summarise(c_mn = mean(c),
-            v_within = mean(se^2))
+            v_within = mean(se)) 
 
 tables_between<-tables %>%
   left_join(tables_within) %>%
-  group_by(year, age, race_ethn) %>%
-  summarise(v_between = mean((c - c_mn)^2))
+  group_by(race_ethn, state, staterr, age, varname) %>%
+  summarise(v_between = 1/7 * sum(c - c_mn)^2)
 
 tables_comb<-tables_within %>%
   left_join(tables_between) %>%
-  mutate(se_tot = sqrt(v_within + (1 + 1/5)*v_between)) %>%
-  select(year, age, race_ethn, c_mn, se_tot)
+  mutate(se_tot = sqrt(v_within + (1 + 1/8)*v_between)) %>%
+  select(state, staterr, varname, race_ethn, age, c_mn, se_tot)
 
-tables_comb<-tables %>%
-  filter(.imp==1) %>%
-  select(-.imp) %>%
-  left_join(tables_comb) %>%
+tables_comb<-tables_comb %>%
   mutate(c_upr = c_mn + 1.96 * se_tot,
-         c_lwr = c_mn - 1.96 * se_tot)
+         c_lwr = c_mn - 1.96 * se_tot) %>% 
+  filter(age==18) %>% 
+  mutate(c_lwr = ifelse(c_lwr<0, 0, c_lwr))
 
+tables_comb<-tables_comb %>% 
+  mutate(varname = case_when(
+    varname=="first_entry" ~ "Foster Care",
+    varname=="first_inv" ~ "Investigation",
+    varname=="first_victim" ~ "Confirmed Maltreatment",
+    varname=="tpr" ~ "Termination",
+    T ~ varname
+  )) 
 
-write_csv(tables_comb, "./vis/fc_lifetable.csv")
-
-tables_afcars<-tables_comb
-
-#################### NCANDS
-
-ncands<-read_csv("./data/ncands_imputed.csv")
-
-ncands<-ncands %>% 
-  mutate(race_ethn = 
-           ifelse(race_ethn == "AI/AN", 
-                  "American Indian / Alaska Native",
-                  race_ethn),
-         race_ethn = 
-           ifelse(race_ethn == "Asian/PI",
-                  "Asian / Pacific Islander",
-                  race_ethn))
-
-ncands_temp<-ncands %>% 
-  filter(.imp==0)
-
-ncands_temp<-ncands_temp %>% 
-  filter(chage<=18) %>% 
-  filter(!(staterr%in%c("XX", "PR"))) %>% 
-  mutate(st_id = paste(staterr, chid, sep = "")) %>% 
-  arrange(rptdt) 
-
-### obtain min(rptdate) when victim == 1
-ncands_index<-ncands_temp %>% 
-  filter(rptvictim==1) %>% 
-  select(st_id, rptdt) %>% 
-  group_by(st_id) %>% 
-  slice(1) %>% 
-  ungroup() %>% 
-  mutate(first_victim = TRUE)
-
-ncands_first_victim<-ncands  %>% 
-  filter(.imp!=0) %>% 
-  mutate(st_id = paste(staterr, chid, sep = "")) %>% 
-  left_join(ncands_index) %>% 
-  filter(!(is.na(first_victim))) %>% 
-  mutate(year = year(rptdt)) %>% 
-  select(.imp, st_id, staterr, year, chage, race_ethn, rptdt) %>% 
-  distinct() %>% 
-  group_by(.imp, staterr, year, chage, race_ethn) %>% 
-  summarise(var = n())
-
-### get first screened-in case
-ncands_first_victim<-ncands_first_victim %>% 
-  ungroup() %>% 
-  complete(race_ethn, chage, 
-           nesting(.imp, year, staterr), 
-           fill = (list(var = 0))) 
-
-### harmonize names
-ncands_first_victim<-ncands_first_victim %>% 
-  rename(age = chage, state = staterr) 
-### subset to complete years
-ncands_first_victim<-ncands_first_victim%>% 
-  filter(year>=2002, 
-         year<2017) %>% 
-  filter(age<=18)
-
-### MAKE STATE POP FILE FOR MATCHING BASED ON NCANDS INCLUSION
-pop_st<-pop %>% 
-  group_by(year, state, race_ethn, age) %>% 
-  summarise(pop = sum(pop)) 
-
-ncands_first_victim<- ncands_first_victim %>% 
-  left_join(pop_st)
-
-dat<- ncands_first_victim %>% 
-  ungroup() %>% 
-  group_by(.imp, year,
-           race_ethn, age) %>% 
-  summarise(var = sum(var, na.rm=TRUE),
-            pop = sum(pop, na.rm=TRUE)) 
-### make life tables
-# add total to table
-dat<-dat %>% 
-  bind_rows(dat %>% 
-              group_by(.imp,year, age) %>% 
-              summarise(var= sum(var, na.rm=TRUE),
-                        pop = sum(pop, na.rm=TRUE)) %>% 
-              mutate(race_ethn = "Total")) 
-
-### run life tables by imp, race_ethnb, sex
-race<-unique(dat$race_ethn)
-years<-unique(dat$year)
-tables_out<-list()
-
-counter<-0
-for(i in 1:5){
-  for(r in 1:length(race)){
-    for(y in 1:length(years)){
-      counter<-counter + 1
-      
-      temp<-dat %>% 
-        filter(.imp == i,
-               race_ethn == race[r],
-               year == years[y])
-      
-      tables_out[[counter]]<-make_life_table(temp)
-    }
-  }
-}
-
-tables<-bind_rows(tables_out)
-
-#### combine across imps
-tables_within<-tables %>% 
-  group_by(year, age, race_ethn) %>% 
-  summarise(c_mn = mean(c),
-            v_within = mean(se^2))
-
-tables_between<-tables %>% 
-  left_join(tables_within) %>% 
-  group_by(year, age, race_ethn) %>% 
-  summarise(v_between = mean((c - c_mn)^2)) 
-
-tables_comb<-tables_within %>% 
-  left_join(tables_between) %>% 
-  mutate(se_tot = sqrt(v_within + (1 + 1/5)*v_between)) %>% 
-  select(year, age, race_ethn, c_mn, se_tot)
-
-tables_comb<-tables %>% 
-  filter(.imp==1) %>% 
-  select(-.imp) %>% 
-  left_join(tables_comb) %>% 
-  mutate(c_upr = c_mn + 1.96 * se_tot,
-         c_lwr = c_mn - 1.96 * se_tot)
-
-write_csv(tables_comb, "./vis/malt_lifetable.csv")
-
-tables_ncands<-tables_comb
-
-tables_vis<-bind_rows(
-  tables_ncands %>% 
-    mutate(outcome = "Confirmed Maltreatment"),
-  tables_afcars %>% 
-    mutate(outcome = "Foster Care Placement")
-)
-
-
-### ### ### ### ### ### ### ### ### ###
-### visuals
-tables<-tables_vis %>%
-  ungroup() %>% 
-  mutate(race_ethn = factor(race_ethn, levels = c("Total", 
-                                                  "American Indian / Alaska Native",
-                                                  "Asian / Pacific Islander",
-                                                  "Black",
-                                                  "Hispanic",
-                                                  "White"))) %>% 
-  rename(`Race/ethnicity` = race_ethn)
-
-ggplot(tables %>%
-         filter(age==18,
-                year>=2004, year<=2016,
-                outcome == "Foster Care Placement"), aes(x = year, y = c ,
-                                 color = `Race/ethnicity`,
-                                 ymin = c_lwr,
-                                 ymax = c_upr)) +
-  geom_line() +
-  geom_linerange() +
-  geom_point(size = 0.7) +
-  theme_minimal() +
-  ylab("Probability of foster care entry by age 18") +
-  xlab("Year") +
-  ggsave("./vis/fc_cumulative_yr_slides.png", width =5, height = 3)
-
-ggplot(tables %>%
-         filter(age==18,
-                year>=2004, year<=2016,
-                outcome == "Confirmed Maltreatment"), aes(x = year, y = c ,
-                                                         color = `Race/ethnicity`,
-                                                         ymin = c_lwr,
-                                                         ymax = c_upr)) +
-  geom_line() +
-  geom_linerange() +
-  geom_point(size = 0.7) +
-  theme_minimal() +
-  ylab("Probability of confirmed maltreatment by age 18") +
-  xlab("Year") +
-  ggsave("./vis/malt_cumulative_yr.png")
-
+write_csv(tables_comb, "./vis/st_tables_combine.csv")
