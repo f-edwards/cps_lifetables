@@ -10,50 +10,16 @@ state_map<-map_data("state")
 
 source("lifetable.r")
 
-pop<-read_fwf("./data/us.1990_2018.singleages.adjusted.txt",
+pop<-read_fwf("~/Projects/data/us.1990_2019.singleages.adjusted.txt",
               fwf_widths(c(4, 2, 2, 3, 2, 1, 1, 1, 2, 8),
                          c("year", "staterr", "state",
                            "cnty_fips", "reg", "race",
                            "hisp", "sex", "age", "pop")))
 
-first_fc<-read_csv("./data/state_first_fc.csv") %>% 
-  rename(subyr = fy) %>% 
-  filter(subyr>=2014, state!=72) %>% 
-  tidyr::complete(.imp, state, subyr, age, 
-           race_ethn, fill = list(first_entry = 0))
+### read in afcars and ncands first event tables
+afcars<-read_csv("~/Projects/ndacan_processing/data/afcars_first_event_state.csv")
+ncands<-read_csv("~/Projects/ndacan_processing/data/ncands_first_event_state.csv")
 
-tpr<-read_csv("./data/state_tpr.csv") %>% 
-  rename(subyr = fy) %>% 
-  filter(subyr>=2014, state!=72) %>% 
-  tidyr::complete(.imp, state, subyr, age, 
-                  race_ethn, fill = list(tpr = 0))
-
-### finish complete zeroes
-first_inv<-read_csv("./data/state_first_inv.csv") %>% 
-  filter(subyr>=2014) %>% 
-  tidyr::complete(.imp, staterr, subyr, age, 
-                  race_ethn, fill = list(first_inv = 0)) %>% 
-  filter(!staterr%in%c("PA", "GA", "RI"))
-  
-
-first_victim<-read_csv("./data/state_first_victim_out.csv") %>% 
-  filter(subyr>=2014) %>% 
-  tidyr::complete(.imp, staterr, subyr, age, 
-                  race_ethn, fill = list(first_victim = 0))
-
-# ### validation check for 2018 maltreatment report
-# victim_validation<-first_victim %>% 
-#   filter(.imp==1, subyr==2018) %>% 
-#   group_by(staterr) %>% 
-#   summarise(first_victim = sum(first_victim)) %>% 
-#   write_csv("./data/validation_victims_18.csv")
-# 
-# inv_validation<-first_inv %>% 
-#   filter(.imp==1, subyr==2018) %>% 
-#   group_by(staterr) %>% 
-#   summarise(first_inv = sum(first_inv)) %>% 
-#   write_csv("./data/validation_investiations_18.csv")
-  
 ### convert state abbrev to fips
 data(state.fips)
 st_fips<-state.fips %>% 
@@ -62,14 +28,13 @@ st_fips<-state.fips %>%
   distinct() %>% 
   bind_rows(data.frame("staterr" = c("AK", "HI"), "state" = c(2, 15)))
 
-dat<-first_fc %>% 
-  left_join(tpr) %>% 
+### harmonize n_imps, afcars has 10, ncands 8
+
+dat<-afcars %>% 
   left_join(st_fips) %>% 
-  left_join(first_inv %>% 
-              left_join(st_fips)) %>% 
-  left_join(first_victim %>% 
-              left_join(st_fips)) %>% 
-  rename(year = subyr)
+  filter(.imp<=8, year >= 2014, year<2019) %>% 
+  left_join(ncands %>% 
+              left_join(st_fips)) 
 
 pop<-pop%>%
   mutate(pop = as.integer(pop))%>%
@@ -97,7 +62,8 @@ dat<-dat %>%
   pivot_longer(cols = c(first_entry, first_inv, first_victim, tpr),
                names_to = "varname",
                values_to = "var") %>% 
-  filter(year>=2014) %>% 
+  filter(year>=2014,
+         age<18) %>% 
   group_by(.imp, staterr, state, varname, age, race_ethn) %>% 
   summarise(var = sum(var), pop = sum(pop))
 
@@ -166,8 +132,9 @@ tables_comb<-tables_within %>%
 tables_comb<-tables_comb %>%
   mutate(c_upr = c_mn + 1.96 * se_tot,
          c_lwr = c_mn - 1.96 * se_tot) %>% 
-  filter(age==18) %>% 
-  mutate(c_lwr = ifelse(c_lwr<0, 0, c_lwr))
+  filter(age==17) %>% 
+  mutate(c_lwr = ifelse(c_lwr<0, 0, c_lwr),
+         c_upr = ifelse(c_upr>1, 1, c_upr))
 
 tables_comb<-tables_comb %>% 
   mutate(varname = case_when(
