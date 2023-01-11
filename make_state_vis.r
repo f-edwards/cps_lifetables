@@ -292,4 +292,70 @@ ggplot(ineq_plot_dat %>%
 
 ggsave("./vis/st_ineq_race_fc.png", width =7, height = 4)
 
+#### scratch for paper numbers
+plot_dat %>% 
+  filter(varname=="Investigation",
+         race_ethn == "Total") %>% 
+  summarise(min = min(c_mn, na.rm=T),
+            max = max(c_mn, na.rm=T))
 
+plot_dat %>% filter(race_ethn=="Total",
+                    varname == "Investigation",
+                    c_mn<0.14) %>% distinct(staterr, c_mn)
+
+### make appendix tables
+
+### appx table 1
+max<-plot_dat %>% 
+  group_by(race_ethn, varname) %>% 
+  mutate(max = max(c_mn, na.rm=T)) %>% 
+  filter(c_mn == max) %>% 
+  arrange(varname)
+
+min<-plot_dat %>% 
+  group_by(race_ethn, varname) %>% 
+  mutate(min = min(c_mn, na.rm=T)) %>% 
+  filter(c_mn == min) %>% 
+  arrange(varname)
+
+plot_dat %>% 
+  filter(varname=="Investigation") %>% 
+  group_by(race_ethn) %>% 
+  summarise(l10 = sum(c_mn<0.1, na.rm=T),
+            g50 = sum(c_mn>0.5, na.rm=T))
+
+ineq_plot_dat %>% 
+  filter(varname == "Investigation") %>% 
+  select(staterr, race_ethn, risk_ratio) %>% 
+  distinct() %>% 
+  group_by(race_ethn) %>% 
+  mutate(max = max(risk_ratio, na.rm=T)) %>% 
+  filter(risk_ratio == max)
+
+ineq_plot_dat %>% 
+  filter(varname == "Investigation") %>% 
+  select(staterr, race_ethn, risk_ratio) %>% 
+  distinct() %>% 
+  group_by(race_ethn) %>% 
+  mutate(min = min(risk_ratio, na.rm=T)) %>% 
+  filter(risk_ratio == min)
+
+ineq_plot_dat %>% 
+  filter(varname == "Investigation") %>% 
+  select(staterr, race_ethn, risk_ratio) %>% 
+  distinct() %>% 
+  group_by(race_ethn) %>% 
+  summarise(g1 = sum(risk_ratio>1, na.rm=T),
+            g2 = sum(risk_ratio>2, na.rm=T))
+
+### appx table 2
+
+### abb to name
+st<-data.frame(staterr = state.abb, state = state.name)
+
+inv<-plot_dat %>% 
+  filter(varname=="Investigation") %>% 
+  select(staterr, race_ethn, c_mn) %>% 
+  pivot_wider(names_from = race_ethn, values_from = c_mn) %>% 
+  left_join(st) %>% 
+  write_csv("inv_temp.csv")

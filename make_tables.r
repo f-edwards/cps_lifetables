@@ -32,7 +32,7 @@ st_fips<-state.fips %>%
 
 dat<-afcars %>% 
   left_join(st_fips) %>% 
-  filter(.imp<=8, year >= 2014, year<2019) %>% 
+  filter(.imp<=8, year >= 2015, year<=2019) %>% 
   left_join(ncands %>% 
               left_join(st_fips)) 
 
