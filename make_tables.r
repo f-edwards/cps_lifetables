@@ -17,8 +17,19 @@ pop<-read_fwf("~/Projects/data/us.1990_2019.singleages.adjusted.txt",
                            "hisp", "sex", "age", "pop")))
 
 ### read in afcars and ncands first event tables
-afcars<-read_csv("~/Projects/ndacan_processing/data/afcars_first_event_state.csv")
-ncands<-read_csv("~/Projects/ndacan_processing/data/ncands_first_event_state.csv")
+### harmonize names in afcars to names in ncands
+afcars<-read_csv("~/Projects/ndacan_processing/data/afcars_first_event_state.csv") %>% 
+  filter(year >= 2015, year <= 2019) 
+
+ncands<-read_csv("~/Projects/ndacan_processing/data/ncands_first_event_state.csv")%>% 
+  filter(year >= 2015, year <= 2019,
+         age<18) %>% 
+  mutate(race_ethn = case_when(
+    race_ethn ==  "Latinx" ~ "Hispanic",
+    race_ethn == "API" ~ "Asian/PI",
+    race_ethn == "AIAN" ~ "AI/AN",
+    T ~ race_ethn
+  ))
 
 ### convert state abbrev to fips
 data(state.fips)
@@ -28,11 +39,10 @@ st_fips<-state.fips %>%
   distinct() %>% 
   bind_rows(data.frame("staterr" = c("AK", "HI"), "state" = c(2, 15)))
 
-### harmonize n_imps, afcars has 10, ncands 8
+# join and harmonize state fips with names
 
 dat<-afcars %>% 
   left_join(st_fips) %>% 
-  filter(.imp<=8, year >= 2015, year<=2019) %>% 
   left_join(ncands %>% 
               left_join(st_fips)) 
 
@@ -49,7 +59,7 @@ pop<-pop%>%
 
 ### get state pop
 pop_st <- pop %>% 
-  filter(age<=18, year>=2014) %>% 
+  filter(age<18, year>=2015, year<=2019) %>% 
   group_by(state, year, staterr, age, race_ethn) %>% 
   summarise(pop = sum(pop)) %>% 
   ungroup() %>% 
@@ -62,8 +72,6 @@ dat<-dat %>%
   pivot_longer(cols = c(first_entry, first_inv, first_victim, tpr),
                names_to = "varname",
                values_to = "var") %>% 
-  filter(year>=2014,
-         age<18) %>% 
   group_by(.imp, staterr, state, varname, age, race_ethn) %>% 
   summarise(var = sum(var), pop = sum(pop))
 
@@ -145,4 +153,4 @@ tables_comb<-tables_comb %>%
     T ~ varname
   )) 
 
-write_csv(tables_comb, "./vis/st_tables_combine.csv")
+write_csv(tables_comb, "./data/st_tables_combine_tpr_update.csv")
