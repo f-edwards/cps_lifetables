@@ -215,6 +215,21 @@ tpr_fc<-tpr_fc %>%
                               "Hispanic",
                               "White")))
 
+tpr_malt<-tpr_malt %>% 
+  mutate(race_ethn = ifelse(race_ethn == "AI/AN",
+                            "American Indian/Alaska Native",
+                            ifelse(race_ethn == "Asian/PI",
+                                   "Asian/Pacific Islander",
+                                   race_ethn))) %>% 
+  mutate(race_ethn = factor(race_ethn,
+                            levels = c(
+                              "Total", 
+                              "American Indian/Alaska Native",
+                              "Asian/Pacific Islander",
+                              "Black",
+                              "Hispanic",
+                              "White")))
+
 # baseline plots ----------------------------------------------------------
 write_csv(state_dat %>% 
             select(state:c_mn) %>% 
